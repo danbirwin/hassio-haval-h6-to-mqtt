@@ -1,2 +1,6 @@
+const fs = require("fs");
 const { LocalStorage } = require("node-localstorage");
-module.exports = new LocalStorage("./storage");
+
+const storagePath = fs.existsSync("/data") ? "/data/gwm-storage" : "./storage";
+
+module.exports = new LocalStorage(storagePath);

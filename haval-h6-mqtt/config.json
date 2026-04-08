@@ -1,6 +1,6 @@
 {
   "name": "GWM Australia com MQTT",
-  "version": "1.0.6-au3",
+  "version": "1.0.6-au4",
   "slug": "hassio_haval_h6_to_mqtt",
   "description": "GWM Australia vehicle integration with Home Assistant via MQTT (AU endpoints).",
   "init": false,
