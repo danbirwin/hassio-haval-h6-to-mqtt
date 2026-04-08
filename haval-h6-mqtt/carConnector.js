@@ -106,7 +106,49 @@ async function auth() {
   const deviceid = storage.getItem("deviceid") ? storage.getItem("deviceid") : md5(Math.random().toString());
   storage.setItem("deviceid", deviceid);
 
-  const params = { deviceid, password: md5(PASSWORD), account: USERNAME };
+    const loginAttempts = [
+        {
+            account: USERNAME,
+            agreement: [1, 2, 23],
+            appType: 0,
+            country: "5",
+            deviceId: deviceid,
+            isEncrypt: false,
+            model: "hassio-haval-h6-to-mqtt",
+            password: PASSWORD,
+            pushToken: "",
+            type: 1,
+        },
+        {
+            account: USERNAME,
+            agreement: [1, 2, 23],
+            appType: 0,
+            country: "5",
+            deviceId: deviceid,
+            isEncrypt: false,
+            model: "hassio-haval-h6-to-mqtt",
+            password: md5(PASSWORD),
+            pushToken: "",
+            type: 1,
+        },
+        {
+            account: USERNAME,
+            agreement: [1, 2, 23],
+            appType: 0,
+            country: "AU",
+            deviceId: deviceid,
+            isEncrypt: false,
+            model: "hassio-haval-h6-to-mqtt",
+            password: PASSWORD,
+            pushToken: "",
+            type: 1,
+        },
+        {
+            deviceid,
+            password: md5(PASSWORD),
+            account: USERNAME,
+        },
+    ];
 
   const userHeaders = {
     appid: "6",
@@ -119,26 +161,34 @@ async function auth() {
         language: "en_AU",
         rs: "2",
         terminal: "GW_APP_GWM",
+        systemType: "2",
+        cver: "",
   };
-  
-  try {
-    const { data } = await axios.post(Endpoints.apiLogin, params, { headers: userHeaders });
 
-    if (data.description === "SUCCESS") {
-      Object.keys(data.data).forEach((key) => {
-        if(key === "accessToken")
-            accessToken = data.data[key];
+    let lastError = null;
+    for (const params of loginAttempts) {
+        try {
+            const { data } = await axios.post(Endpoints.apiLogin, params, { headers: userHeaders });
 
-        if(key === "refreshToken")
-            refreshToken = data.data[key];
-      });
-      return { accessToken, refreshToken };
+            if (data.description === "SUCCESS") {
+                Object.keys(data.data).forEach((key) => {
+                    if(key === "accessToken")
+                            accessToken = data.data[key];
+
+                    if(key === "refreshToken")
+                            refreshToken = data.data[key];
+                });
+                return { accessToken, refreshToken };
+            }
+
+            lastError = data;
+        } catch (err) {
+            lastError = err.response?.data || err;
     }
-    throw data;
-  } catch (err) {
-    printLog(LogType.ERROR, `---${UserMessages.ERROR_AUTHENTICATION_LOG}---`, err);
+    }
+
+    printLog(LogType.ERROR, `---${UserMessages.ERROR_AUTHENTICATION_LOG}---`, lastError);
     throw new Error(UserMessages.ERROR_AUTHENTICATION);
-  }
 };
 
 let headers = {}
@@ -174,7 +224,8 @@ async function updateHeaders() {
         terminal: "GW_APP_GWM",
         brand: "6",
         language: "en_AU",
-        systemtype: "2",
+        systemType: "2",
+        cver: "",
         regioncode: "AU",
         country: "AU",
         accessToken: accessToken,
