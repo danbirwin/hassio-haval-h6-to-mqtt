@@ -21,9 +21,10 @@ const getCarList = async () => {
     if(data)
       carList = data.data;
 
-    return carList;
+    return Array.isArray(carList) ? carList : [];
   } catch(e) {
     printLog(LogType.ERROR, "***Error retrieving car data: ", e.message);
+    return [];
   }
 }
 
@@ -54,6 +55,9 @@ validationSchema.validate(process.env)
   })
   .then(async (data)=> {
     var carList = data;
+    if (!Array.isArray(carList))
+      carList = [];
+
     if(carList.length > 0){
 
       printLog(LogType.INFO, "  Registering car list");

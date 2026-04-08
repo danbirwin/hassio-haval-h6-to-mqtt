@@ -4,6 +4,7 @@ set +u
 export REFRESH_TIME=$(bashio::config 'refresh_time')
 export USERNAME=$(bashio::config 'gwm_username')
 export PASSWORD=$(bashio::config 'gwm_password')
+export SMS_CODE=$(bashio::config 'gwm_sms_code')
 export VIN=$(bashio::config 'gwm_vin')
 export PIN=$(bashio::config 'gwm_pin')
 export MQTT_HOST=$(bashio::config 'mqtt_server')

@@ -9,7 +9,7 @@ const { isTokenExpired, LogType, printLog } = require('./utils');
 const { sensorTopics } = require("./map");
 const { error } = require("console");
 
-const { USERNAME, PASSWORD, PIN } = process.env;
+const { USERNAME, PASSWORD, PIN, SMS_CODE } = process.env;
 
 const Actions = {
     Doors: { OPEN: "1", CLOSE: "2" },
@@ -35,7 +35,9 @@ const Options = {
 
 const Endpoints = {
     apiVehicle: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0",
-    apiLogin: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0/userAuth/loginAccount"
+    apiLogin: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0/userAuth/loginAccount",
+    apiSmsCode: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0/userAuth/getSMSCode",
+    apiLoginWithSms: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0/userAuth/loginWithSMS"
 };
 
 const UserMessages = {
@@ -54,6 +56,8 @@ const UserMessages = {
     ERROR_SETTING_CHARGING: "Error creating a charging schedule.",
     ERROR_AUTHENTICATION: "Authentication error. Please check your credentials.",
     ERROR_AUTHENTICATION_LOG: "Authentication error",
+    SMS_CODE_REQUESTED: "Password login was rejected. A verification code was requested by email. Set gwm_sms_code in the add-on configuration and restart the add-on.",
+    SMS_CODE_LOGIN_FAILED: "Email code login failed. Please request a new code and update gwm_sms_code.",
     ERROR_RETRIEVING_CAR_DATA: "Error retrieving vehicle data.",
     ERROR_RETRIEVING_CAR_LIST: "Error retrieving registered vehicle list.",
     ERROR_RETRIEVING_CAR_STATUS: "Error retrieving vehicle status.",
@@ -150,6 +154,29 @@ async function auth() {
         },
     ];
 
+    const smsLoginAttempts = [
+        {
+            agreement: [1, 2, 23],
+            appType: 0,
+            country: "5",
+            deviceId: deviceid,
+            email: USERNAME,
+            model: "hassio-haval-h6-to-mqtt",
+            pushToken: "",
+            smsCode: SMS_CODE,
+        },
+        {
+            agreement: [1, 2, 23],
+            appType: 0,
+            country: "AU",
+            deviceId: deviceid,
+            email: USERNAME,
+            model: "hassio-haval-h6-to-mqtt",
+            pushToken: "",
+            smsCode: SMS_CODE,
+        },
+    ];
+
   const userHeaders = {
     appid: "6",
     brand: "6",
@@ -165,19 +192,23 @@ async function auth() {
         cver: "",
   };
 
+    const storeTokens = (data) => {
+        Object.keys(data.data).forEach((key) => {
+            if(key === "accessToken")
+                    accessToken = data.data[key];
+
+            if(key === "refreshToken")
+                    refreshToken = data.data[key];
+        });
+    };
+
     let lastError = null;
     for (const params of loginAttempts) {
         try {
             const { data } = await axios.post(Endpoints.apiLogin, params, { headers: userHeaders });
 
             if (data.description === "SUCCESS") {
-                Object.keys(data.data).forEach((key) => {
-                    if(key === "accessToken")
-                            accessToken = data.data[key];
-
-                    if(key === "refreshToken")
-                            refreshToken = data.data[key];
-                });
+                storeTokens(data);
                 return { accessToken, refreshToken };
             }
 
@@ -185,6 +216,39 @@ async function auth() {
         } catch (err) {
             lastError = err.response?.data || err;
     }
+    }
+
+    if (SMS_CODE && String(SMS_CODE).trim() !== "") {
+        for (const params of smsLoginAttempts) {
+            try {
+                const { data } = await axios.post(Endpoints.apiLoginWithSms, params, { headers: userHeaders });
+
+                if (data.description === "SUCCESS") {
+                    storeTokens(data);
+                    return { accessToken, refreshToken };
+                }
+
+                lastError = data;
+            } catch (err) {
+                lastError = err.response?.data || err;
+            }
+        }
+
+        printLog(LogType.ERROR, UserMessages.SMS_CODE_LOGIN_FAILED, lastError);
+    } else if (lastError?.code === "420001") {
+        try {
+            const { data } = await axios.post(
+                Endpoints.apiSmsCode,
+                { email: USERNAME, scenario: 0, type: 3 },
+                { headers: userHeaders }
+            );
+
+            if (data.code === "000000") {
+                printLog(LogType.INFO, UserMessages.SMS_CODE_REQUESTED);
+            }
+        } catch (smsErr) {
+            printLog(LogType.ERROR, "---SMS code request failed---", smsErr.response?.data || smsErr);
+        }
     }
 
     printLog(LogType.ERROR, `---${UserMessages.ERROR_AUTHENTICATION_LOG}---`, lastError);

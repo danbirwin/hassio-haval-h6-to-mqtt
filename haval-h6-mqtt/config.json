@@ -1,6 +1,6 @@
 {
   "name": "GWM Australia com MQTT",
-  "version": "1.0.6-au2",
+  "version": "1.0.6-au3",
   "slug": "hassio_haval_h6_to_mqtt",
   "description": "GWM Australia vehicle integration with Home Assistant via MQTT (AU endpoints).",
   "init": false,
@@ -18,11 +18,13 @@
   "options": {
     "refresh_time": 30,
     "mqtt_server": "mqtt://homeassistant.local:1883",
+    "gwm_sms_code": "",
     "device_tracker_enabled": true
   },
   "schema": {
     "gwm_username": "email",
     "gwm_password": "password",
+    "gwm_sms_code": "str?",
     "gwm_vin": "str",
     "gwm_pin": "password?",
     "mqtt_server": "str?",
