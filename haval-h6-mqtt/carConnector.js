@@ -34,8 +34,8 @@ const Options = {
 };
 
 const Endpoints = {
-    apiVehicle: "https://br-app-gateway.gwmcloud.com/app-api/api/v1.0",
-    apiLogin: "https://br-front-service.gwmcloud.com/br-official-commerce/br-official-gateway/pc-api/api/v1.0/userAuth/loginAccount"
+    apiVehicle: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0",
+    apiLogin: "https://aus-h5-gateway.gwmcloud.com/app-api/api/v1.0/userAuth/loginAccount"
 };
 
 const UserMessages = {
@@ -112,13 +112,13 @@ async function auth() {
     appid: "6",
     brand: "6",
     brandid: "CCZ001",
-    country: "BR",
+        country: "AU",
     devicetype: "0",
     enterpriseid: "CC01",
     gwid: "",
-    language: "pt_BR",
-    rs: "5",
-    terminal: "GW_PC_GWM",
+        language: "en_AU",
+        rs: "2",
+        terminal: "GW_APP_GWM",
   };
   
   try {
@@ -173,10 +173,10 @@ async function updateHeaders() {
         rs: "2",
         terminal: "GW_APP_GWM",
         brand: "6",
-        language: "pt_BR",
+        language: "en_AU",
         systemtype: "2",
-        regioncode: "BR",
-        country: "BR",
+        regioncode: "AU",
+        country: "AU",
         accessToken: accessToken,
         refreshToken: refreshToken
     };
